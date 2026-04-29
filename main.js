@@ -546,10 +546,10 @@ function pushTrail(x, y, z) {
   trailGeo.setColors(trailColors.subarray(0, trailLen * 3));
 }
 
-// Much faster — cross any distance between orbs in well under a second so the
-// motion reads as immediate response to a click.
-const STEP_RATE = 240;    // simulation steps per second (high so motion is smooth)
-const STEP_LEN = 0.10;    // domain units per step (speed = STEP_RATE * STEP_LEN ≈ 24 u/s)
+// Slow and smooth — high simulation rate (240 Hz) with a tiny step so the
+// trail glides cleanly across the surface at ~6 units/sec.
+const STEP_RATE = 240;    // simulation steps per second (high → smooth motion)
+const STEP_LEN = 0.025;   // domain units per step (speed ≈ 6 u/s)
 const SURFACE_LIFT = 0.05; // raise the trail just above the surface
 
 function stepClimber(dt) {
