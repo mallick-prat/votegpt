@@ -249,14 +249,16 @@ function makeMountain(spec) {
 const fadeStart = -0.55;
 const fadeEnd = -2.1;
 
-// Background: tallest, softer, atmospheric — sits furthest back.
+// Right peak — dark blue, tallest, biggest of the three (matches the brand
+// mark's largest peak on the right). Sits furthest back so it reads as the
+// atmospheric background of the trio.
 const bg = makeMountain({
-  radius: 3.2,
-  height: 6.6,
+  radius: 2.9,
+  height: 6.4,
   seed: 1.7,
-  x: -0.1,
-  z: -2.4,
-  peakY: 2.65,
+  x: 1.35,
+  z: -1.6,
+  peakY: 2.55,
   rotY: 0.6,
   renderOrder: 0,
   material: {
@@ -274,14 +276,15 @@ const bg = makeMountain({
   },
 });
 
-// Middle: offset, between in depth and prominence.
+// Middle peak — light blue, smallest, nestled between the red and dark blue
+// (matches the brand mark's small middle peak).
 const mid = makeMountain({
-  radius: 2.2,
-  height: 5.2,
+  radius: 1.55,
+  height: 4.0,
   seed: 0.8,
-  x: 0.85,
-  z: -0.4,
-  peakY: 1.7,
+  x: 0.05,
+  z: 0.2,
+  peakY: 1.4,
   rotY: -0.4,
   renderOrder: 1,
   material: {
@@ -299,13 +302,14 @@ const mid = makeMountain({
   },
 });
 
-// Foreground: sharpest, closest, tightest contour detail.
+// Left peak — red, foreground, sharpest contour detail (matches the brand
+// mark's left peak).
 const fg = makeMountain({
   radius: 2.05,
   height: 4.6,
   seed: 2.4,
-  x: -0.7,
-  z: 1.7,
+  x: -1.35,
+  z: 1.5,
   peakY: 0.85,
   rotY: 0.3,
   renderOrder: 2,
