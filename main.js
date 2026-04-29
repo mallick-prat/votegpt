@@ -494,6 +494,11 @@ function pickService(clientX, clientY) {
 }
 
 canvas.addEventListener("click", (e) => {
+  // If the pointer-up came from a drag (orbit gesture), don't pick a service.
+  if (touchOneDragged) {
+    touchOneDragged = false;
+    return;
+  }
   const svc = pickService(e.clientX, e.clientY);
   // focusOn / unfocus are function declarations defined later — hoisted, safe to call.
   if (svc) focusOn(svc);
@@ -615,42 +620,92 @@ canvas.addEventListener(
   { passive: false }
 );
 
-// Two-finger pinch zoom for touch
+// Touch input: 1-finger drag → orbit (left/right rotates azimuth, up/down tilts
+// elevation). 2-finger pinch → zoom. Below an 8-px threshold a touch is still
+// treated as a tap so the click handler can fire normally.
 let lastPinchDist = null;
+let touchOneStart = null;
+let touchOnePrev = null;
+let touchOneDragged = false;
+let touchOneActive = false;
+const TOUCH_DRAG_THRESHOLD = 8;
+
 canvas.addEventListener(
   "touchstart",
   (e) => {
-    if (e.touches.length === 2) {
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      touchOneStart = { x: t.clientX, y: t.clientY };
+      touchOnePrev = { x: t.clientX, y: t.clientY };
+      touchOneDragged = false;
+      touchOneActive = true;
+      lastPinchDist = null;
+    } else if (e.touches.length === 2) {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       lastPinchDist = Math.hypot(dx, dy);
+      touchOneActive = false;
+      touchOneStart = null;
+      touchOnePrev = null;
     } else {
       lastPinchDist = null;
+      touchOneActive = false;
+      touchOneStart = null;
     }
   },
   { passive: true }
 );
+
 canvas.addEventListener(
   "touchmove",
   (e) => {
-    if (e.touches.length !== 2) return;
-    if (e.cancelable) e.preventDefault();
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    const dist = Math.hypot(dx, dy);
-    if (lastPinchDist && dist > 0) {
-      const ratio = lastPinchDist / dist;
-      zoomTarget = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoomTarget * ratio));
+    // Two-finger pinch
+    if (e.touches.length === 2) {
+      if (e.cancelable) e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      if (lastPinchDist && dist > 0) {
+        const ratio = lastPinchDist / dist;
+        zoomTarget = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoomTarget * ratio));
+      }
+      lastPinchDist = dist;
+      return;
     }
-    lastPinchDist = dist;
+    // One-finger drag → orbit
+    if (e.touches.length === 1 && touchOneStart) {
+      const t = e.touches[0];
+      const totalDx = t.clientX - touchOneStart.x;
+      const totalDy = t.clientY - touchOneStart.y;
+      // Below the threshold, leave it alone so a tap still fires "click".
+      if (
+        !touchOneDragged &&
+        Math.hypot(totalDx, totalDy) < TOUCH_DRAG_THRESHOLD
+      ) {
+        return;
+      }
+      touchOneDragged = true;
+      if (e.cancelable) e.preventDefault();
+      const dx = t.clientX - touchOnePrev.x;
+      const dy = t.clientY - touchOnePrev.y;
+      // Map screen pixels to camera angle deltas.
+      azimT -= dx * 0.0065;
+      elev = Math.max(0.05, Math.min(1.25, elev + dy * 0.0042));
+      touchOnePrev = { x: t.clientX, y: t.clientY };
+    }
   },
   { passive: false }
 );
-const endPinch = () => {
+
+const endTouch = () => {
   lastPinchDist = null;
+  touchOneActive = false;
+  touchOneStart = null;
+  touchOnePrev = null;
+  // touchOneDragged is consumed by the click handler below.
 };
-canvas.addEventListener("touchend", endPinch);
-canvas.addEventListener("touchcancel", endPinch);
+canvas.addEventListener("touchend", endTouch);
+canvas.addEventListener("touchcancel", endTouch);
 
 let t0 = performance.now();
 let azim = 0.6;
@@ -776,8 +831,8 @@ function animate() {
 
   // Auto-orbit slowly + offset by mouse — pause auto-spin while focused.
   if (!focusedSvc) {
-    azimT += dt * 0.035;
-  } else if (focusAzimTarget != null) {
+    if (!touchOneActive) azimT += dt * 0.035;
+  } else if (focusAzimTarget != null && !touchOneActive) {
     // Snap azimT toward the focus angle quickly when focused (fast transition).
     const delta = ((focusAzimTarget - azimT + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
     azimT += delta * Math.min(1, dt * 2.5);
