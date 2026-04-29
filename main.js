@@ -403,7 +403,8 @@ const serviceGlowMat = new THREE.MeshBasicMaterial({
 });
 const serviceGlowGeo = new THREE.SphereGeometry(0.13, 14, 14);
 // Invisible "hit zone" sphere — much larger than the dot so taps register easily.
-const serviceHitGeo = new THREE.SphereGeometry(0.42, 10, 10);
+// Bigger on phones for fat-finger forgiveness.
+const serviceHitGeo = new THREE.SphereGeometry(IS_PHONE ? 0.65 : 0.42, 10, 10);
 const serviceHitMat = new THREE.MeshBasicMaterial({ visible: false });
 
 const serviceHitMeshes = [];
@@ -422,14 +423,15 @@ for (const svc of services) {
   plot.add(glow);
 
   // Two label sprites — dim (default) and bright/bold (selected). Toggle .visible.
-  const labelScale = IS_PHONE ? 0.0024 : 0.0028;
+  // Mobile gets a noticeably larger label so the tap target is easier.
+  const labelScale = IS_PHONE ? 0.0042 : 0.0028;
   const labelDim = makeTextSprite(svc.label, {
     fontSize: 48,
     fontWeight: 400,
     color: "rgba(150, 158, 172, 0.78)",
     scale: labelScale,
   });
-  labelDim.position.set(svc.x, surfaceY + 0.42, svc.z);
+  labelDim.position.set(svc.x, surfaceY + 0.5, svc.z);
   plot.add(labelDim);
 
   const labelBright = makeTextSprite(svc.label, {
@@ -438,7 +440,7 @@ for (const svc of services) {
     color: "rgba(255, 255, 255, 1.0)",
     scale: labelScale,
   });
-  labelBright.position.set(svc.x, surfaceY + 0.42, svc.z);
+  labelBright.position.set(svc.x, surfaceY + 0.5, svc.z);
   labelBright.visible = false;
   plot.add(labelBright);
 
@@ -494,9 +496,13 @@ function pickService(clientX, clientY) {
 }
 
 canvas.addEventListener("click", (e) => {
-  // If the pointer-up came from a drag (orbit gesture), don't pick a service.
+  // If the pointer-up came from a drag (touch or mouse), don't pick a service.
   if (touchOneDragged) {
     touchOneDragged = false;
+    return;
+  }
+  if (mouseDragMoved) {
+    mouseDragMoved = false;
     return;
   }
   const svc = pickService(e.clientX, e.clientY);
@@ -577,9 +583,51 @@ function stepClimber(dt) {
 // -----------------------------------------------------------------------------
 let mouseX = 0;
 let mouseY = 0;
+
+// Desktop mouse drag-to-orbit. Mirrors the 1-finger touch behaviour above.
+let mouseDragging = false;
+let mouseDragMoved = false;
+let mouseDragPrev = null;
+const MOUSE_DRAG_THRESHOLD = 4;
+
+canvas.addEventListener("pointerdown", (e) => {
+  if (e.pointerType === "touch") return;
+  mouseDragging = true;
+  mouseDragMoved = false;
+  mouseDragPrev = { x: e.clientX, y: e.clientY };
+  canvas.setPointerCapture?.(e.pointerId);
+});
+
+window.addEventListener("pointerup", (e) => {
+  if (e.pointerType === "touch") return;
+  mouseDragging = false;
+  mouseDragPrev = null;
+});
+
 window.addEventListener("pointermove", (e) => {
   // Don't let stray touches jerk the camera around — only mouse/pen drives parallax.
   if (e.pointerType === "touch") return;
+
+  // While the mouse is held down, drag rotates the camera.
+  if (mouseDragging && mouseDragPrev) {
+    const dx = e.clientX - mouseDragPrev.x;
+    const dy = e.clientY - mouseDragPrev.y;
+    if (
+      !mouseDragMoved &&
+      Math.hypot(e.clientX - mouseDragPrev.x, e.clientY - mouseDragPrev.y) >=
+        MOUSE_DRAG_THRESHOLD
+    ) {
+      mouseDragMoved = true;
+    }
+    if (mouseDragMoved) {
+      azimT -= dx * 0.005;
+      elev = Math.max(0.05, Math.min(1.25, elev + dy * 0.0035));
+    }
+    mouseDragPrev = { x: e.clientX, y: e.clientY };
+    return;
+  }
+
+  // Otherwise: passive cursor parallax.
   mouseX = (e.clientX / window.innerWidth) * 2 - 1;
   mouseY = (e.clientY / window.innerHeight) * 2 - 1;
 });
@@ -832,7 +880,7 @@ function animate() {
   // Auto-orbit slowly + offset by mouse — pause auto-spin while focused.
   if (!focusedSvc) {
     if (!touchOneActive) azimT += dt * 0.035;
-  } else if (focusAzimTarget != null && !touchOneActive) {
+  } else if (focusAzimTarget != null && !touchOneActive && !mouseDragging) {
     // Snap azimT toward the focus angle quickly when focused (fast transition).
     const delta = ((focusAzimTarget - azimT + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
     azimT += delta * Math.min(1, dt * 2.5);
