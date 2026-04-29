@@ -414,11 +414,13 @@ for (const svc of services) {
   const dot = new THREE.Mesh(serviceDotGeo, serviceDotMat);
   dot.position.set(svc.x, surfaceY + 0.07, svc.z);
   dot.renderOrder = 7;
+  dot.visible = false; // labels act as the buttons; no static blue dot needed
   plot.add(dot);
 
   const glow = new THREE.Mesh(serviceGlowGeo, serviceGlowMat);
   glow.position.copy(dot.position);
   glow.renderOrder = 6;
+  glow.visible = false; // hide the halo too — the only visible orb is the climber
   plot.add(glow);
 
   // Two label sprites — dim (default) and bright/bold (selected). Toggle .visible.
@@ -546,10 +548,10 @@ function pushTrail(x, y, z) {
   trailGeo.setColors(trailColors.subarray(0, trailLen * 3));
 }
 
-// Slow and smooth — high simulation rate (240 Hz) with a tiny step so the
-// trail glides cleanly across the surface at ~6 units/sec.
-const STEP_RATE = 240;    // simulation steps per second (high → smooth motion)
-const STEP_LEN = 0.025;   // domain units per step (speed ≈ 6 u/s)
+// Slow and smooth — very high simulation rate (300 Hz) with a tiny step so the
+// trail glides cleanly across the surface at ~3 units/sec (calm walking pace).
+const STEP_RATE = 300;    // simulation steps per second (high → smooth motion)
+const STEP_LEN = 0.010;   // domain units per step (speed ≈ 3 u/s)
 const SURFACE_LIFT = 0.05; // raise the trail just above the surface
 
 function stepClimber(dt) {
