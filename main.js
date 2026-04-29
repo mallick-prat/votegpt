@@ -776,14 +776,14 @@ function setLabelStates(selectedSvc) {
 
 function focusOn(svc) {
   focusedSvc = svc;
-  const surfaceY = heightAt(svc.x, svc.z);
-  lookTarget.set(svc.x, surfaceY + 0.07, svc.z);
   zoomTarget = FOCUS_ZOOM;
   // Outward camera angle (180° flip from the old default).
   focusAzimTarget = Math.atan2(svc.x, svc.z);
   // Redirect the climbing line — sticky until another service is highlighted.
   climberTarget = svc;
   climbAccum = 0;
+  // Camera will follow the BALL (lookTarget is updated each frame in animate()),
+  // so it glides with the climber rather than jumping straight to the orb.
   setLabelStates(svc);
   showService(svc);
 }
@@ -793,6 +793,8 @@ function unfocus() {
   focusAzimTarget = null;
   lookTarget.set(0, 1.0, 0);
   zoomTarget = DEFAULT_ZOOM;
+  // Freeze the ball where it is — don't keep wandering after the panel closes.
+  climberTarget = null;
   setLabelStates(null);
   hideService();
 }
@@ -904,6 +906,13 @@ function animate() {
   camera.lookAt(lookCenter);
 
   stepClimber(dt);
+
+  // While focused, the camera follows the BALL's current position (not the
+  // orb's), so it glides alongside the climber as it walks to the next orb.
+  if (focusedSvc) {
+    const cy = heightAt(climberX, climberZ);
+    lookTarget.set(climberX, cy + 0.07, climberZ);
+  }
 
   // Keep the description popup glued to the focused orb in screen space.
   if (focusedSvc) updatePanelPosition();
