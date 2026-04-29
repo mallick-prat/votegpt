@@ -311,15 +311,14 @@ plot.add(trail);
 const DOT_COLOR = 0x4ec3ff;
 
 const head = new THREE.Mesh(
-  new THREE.SphereGeometry(0.085, 20, 20),
+  new THREE.SphereGeometry(0.10, 20, 20),
   new THREE.MeshBasicMaterial({
-    color: DOT_COLOR,
+    color: 0xfff3a8, // cream — matches the trail head so it reads as the "ball"
     transparent: true,
-    opacity: 0.98,
+    opacity: 1.0,
   })
 );
 head.renderOrder = 6;
-head.visible = false; // hide the moving "head" sphere — only the trail line shows
 plot.add(head);
 
 let climberX = 0;
@@ -547,8 +546,10 @@ function pushTrail(x, y, z) {
   trailGeo.setColors(trailColors.subarray(0, trailLen * 3));
 }
 
-const STEP_RATE = 70;     // simulation steps per second
-const STEP_LEN = 0.045;   // domain units per step (path advance speed)
+// Much faster — cross any distance between orbs in well under a second so the
+// motion reads as immediate response to a click.
+const STEP_RATE = 240;    // simulation steps per second (high so motion is smooth)
+const STEP_LEN = 0.10;    // domain units per step (speed = STEP_RATE * STEP_LEN ≈ 24 u/s)
 const SURFACE_LIFT = 0.05; // raise the trail just above the surface
 
 function stepClimber(dt) {
