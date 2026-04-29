@@ -567,6 +567,15 @@ function stepClimber(dt) {
       const y = heightAt(climberX, climberZ) + SURFACE_LIFT;
       pushTrail(climberX, y, climberZ);
       head.position.set(climberX, y, climberZ);
+      // The popup waits for the ball to land here. Show it now if focused.
+      if (
+        focusedSvc &&
+        climberTarget === focusedSvc &&
+        panel &&
+        panel.classList.contains("is-hidden")
+      ) {
+        showService(focusedSvc);
+      }
       return;
     }
     climberX += (dx / dist) * STEP_LEN;
@@ -785,7 +794,8 @@ function focusOn(svc) {
   // Camera will follow the BALL (lookTarget is updated each frame in animate()),
   // so it glides with the climber rather than jumping straight to the orb.
   setLabelStates(svc);
-  showService(svc);
+  // Don't open the popup yet — it appears only when the ball arrives.
+  hideService();
 }
 
 function unfocus() {
