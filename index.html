@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hillclimb Strategies</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+</head>
+<body>
+  <header class="brand brand--top">
+    <div class="name">HILLCLIMB STRATEGIES</div>
+    <div class="locations">DC &middot; NYC &middot; BOSTON</div>
+  </header>
+
+  <main>
+    <canvas id="scene" aria-label="Rotating 3D rendering of the Hillclimb mountains"></canvas>
+  </main>
+
+  <section class="pitch">
+    <p class="pitch-desc">
+      We help liberal campaigns, PACs, and advocacy organizations win.
+    </p>
+    <p class="pitch-tag">Find your local maxima.</p>
+    <a class="info" id="contact-link" href="#">CONTACT</a>
+  </section>
+
+  <footer class="meta">
+    <span id="election-label">2026 GENERAL ELECTION</span>
+    <span id="election-countdown">&nbsp;</span>
+  </footer>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
